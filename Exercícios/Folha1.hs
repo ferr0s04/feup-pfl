@@ -1,4 +1,4 @@
--- Exercício 1.3
+-- Exercício 1.3 -> Função que divide uma lista em duas de comprimentos semelhantes
 metades :: [a] -> ([a], [a])
 metades xs = (take metade xs, drop metade xs)
     where metade = length xs `div` 2
@@ -11,7 +11,7 @@ Nota: para listas de tamanho ímpar, a segunda lista fica com mais um elemento q
 
 
 -- Exercício 1.4
--- a)
+-- a) -> Redefinir a função last usando as funções head, tail, reverse, take, drop e length
 last' :: [a] -> a
 last' xs = head (reverse xs)
 
@@ -19,7 +19,7 @@ last'' :: [a] -> a
 last'' xs = head (drop i xs) -- 'drop i xs' retorna uma lista, não um elemento só
     where i = length xs - 1
 
--- b)
+-- b) -> Redefinir a função init usando as funções head, tail, reverse, take, drop e length
 init' :: [a] -> [a]
 init' xs = reverse (tail (reverse xs))
 
@@ -28,7 +28,7 @@ init'' xs = drop i xs
     where i = length xs - 1
 
 
--- Exercício 1.7
+-- Exercício 1.7 -> Indicar os tipos admissíveis
 {-
 Dica: usar ':t' no ghci para obter o tipo da expressão
 a) ['a', 'b', 'c'] -> [a], [Char]
@@ -39,7 +39,7 @@ e) [tail, init, reverse] -> [[a] -> [a]]
 f) [id, not] -> [Bool -> Bool]
 -}
 
--- Exercício 1.8
+-- Exercício 1.8 -> Indicar o tipo mais geral
 {-
 a) segundo :: [a] -> a
 b) trocar :: (a, b) -> (b, a)
@@ -52,14 +52,14 @@ h) palindromo :: Eq a => [a] -> Bool
 i) twice :: (a -> a) -> a -> a
 -}
 
--- Exercício 1.12
+-- Exercício 1.12 -> Definir a função xor
 xor' :: Bool -> Bool -> Bool
 xor' True True = False
 xor' False False = False
 xor' True False = True
 xor' False True = True
 
--- Exercício 1.16
+-- Exercício 1.16 -> Função que imprime um número por extenso, para números inferiores a 1 milhão
 converte :: Int -> String
 converte n
     | n < 0 || n >= 1000000 = "número fora dos limites"
