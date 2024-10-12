@@ -3,7 +3,7 @@
 Functional and Logical Programming (PFL)
 
 **Contents**  
-Practical classes' solved exercise sheets (Sheet 1, for now)  
+Practical classes' solved exercise sheets (Sheets 1-3, for now)  
 Practical projects (SOON)
 
 ## Projects
