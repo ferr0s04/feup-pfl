@@ -1,2 +1,7 @@
-Projeto 1/*
+# GHC compilation files
+*.exe
+*.o
+*.hi
+
+# 2nd Project - SOON
 Projeto 2/*
