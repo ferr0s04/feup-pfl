@@ -14,12 +14,12 @@ type AdjMatrix = Data.Array.Array (Int,Int) (Maybe Distance)
 data AdjPointers = Place City [(AdjPointers, Distance)]
 
 
--- Function to get the list of all cities
+-- Function to get the list of all cities.
 cities :: RoadMap -> [City]
 cities roadMap = Data.List.nub [c | (c1, c2, _) <- roadMap, c <- [c1, c2]]
 
 
--- Function to check if two cities are directly connected
+-- Function to check if two cities are directly connected.
 areAdjacent :: RoadMap -> City -> City -> Bool
 areAdjacent rm city1 city2 = any (\(c1, c2, _) -> (c1 == city1 && c2 == city2) || (c1 == city2 && c2 == city1)) rm
 
@@ -34,7 +34,7 @@ distance rm city1 city2 = case filter (\(c1, c2, _) -> (c1 == city1 && c2 == cit
     _           -> Nothing
 
 
--- Function that returns the list of cities that are directly connected with a specific city
+-- Function that returns the list of cities that are directly connected with a specific city.
 adjacent :: RoadMap -> City -> [(City, Distance)]
 adjacent rm city = [(c2, d) | (c1, c2, d) <- rm, c1 == city] ++ [(c1, d) | (c1, c2, d) <- rm, c2 == city]
 
@@ -51,38 +51,35 @@ pathDistance rm (c1:c2:cs) =
             Just dist -> Just (d + dist)
 
 
--- Auxiliary function that counts the number of connections for a specific city
+-- Auxiliary function that counts the number of connections for a specific city.
 countConnections :: City -> RoadMap -> Int
 countConnections city rm = length [() | (c1, c2, _) <- rm, c1 == city || c2 == city]
 
 
--- Function that returns the city (or cities) with the most connections
+-- Function that returns the city (or cities) with the most connections.
 rome :: RoadMap -> [City]
 rome rm =
   let degrees = [(city, countConnections city rm) | city <- Data.List.nub (cities rm)]
       maxDegree = foldl1 max (map snd degrees)
   in [city | (city, deg) <- degrees, deg == maxDegree]
 
-
--- TODO - WITH ERRORS
--- Function that checks if the roadmap graph is strongly connected
+-- Function that checks if the roadmap graph is strongly connected.
 isStronglyConnected :: RoadMap -> Bool
 isStronglyConnected rm =
   let cityList = cities rm
-  in not (null cityList) && (length (dfs rm (head cityList) []) == length cityList)
+   in all (\city -> length (dfs rm city []) == length cityList) cityList
 
--- TODO - WITH ERRORS
--- Auxiliary function for DFS
+-- Auxiliary function for DFS.
 dfs :: RoadMap -> City -> [City] -> [City]
 dfs rm c visited
-  | c `elem` visited = visited -- If already visited, return the visited list
+  | c `elem` visited = visited -- If visit, it doesn't return here.
   | otherwise =
       let newVisited = c : visited
-          adjacentCities = [city | (city, _) <- adjacent rm c] -- Extract only cities
-      in foldl (\acc city -> dfs rm city newVisited) newVisited adjacentCities
+          adjacentCities = [city | (city, _) <- adjacent rm c]  -- It only goes to the adjacent cities.
+       in foldr (\city acc -> dfs rm city acc) newVisited adjacentCities
 
 
--- Auxiliary function that uses BFS to find shortest paths
+-- Auxiliary function that uses BFS to find shortest paths.
 bfsPaths :: RoadMap -> [[City]] -> City -> [Path]
 bfsPaths _ [] _ = []
 bfsPaths rm (path:paths) target
@@ -90,14 +87,14 @@ bfsPaths rm (path:paths) target
   | otherwise = bfsPaths rm (paths ++ [nextCity:path | (nextCity, _) <- adjacent rm (head path), nextCity `notElem` path]) target
 
 
--- Function to find all shortest paths
+-- Function to find all shortest paths.
 shortestPath :: RoadMap -> City -> City -> [Path]
 shortestPath rm start end
-  | start == end = [[start]]  -- A path from a city to itself
+  | start == end = [[start]]  -- A path from a city to itself.
   | otherwise = bfsPaths rm [[start]] end
 
 
--- Auxiliary function to create a distance matrix for the cities
+-- Auxiliary function to create a distance matrix for the cities.
 distanceMatrix :: RoadMap -> [City] -> AdjMatrix
 distanceMatrix rm cs =
     Data.Array.array ((0, 0), (n - 1, n - 1)) [((i, j), distance rm (cs !! i) (cs !! j)) | i <- [0..n-1], j <- [0..n-1]]
@@ -105,32 +102,37 @@ distanceMatrix rm cs =
     n = length cs
 
 
--- Auxiliary function to find the minimum path by length
+-- Auxiliary function to find the minimum path by length.
 minimumByLength :: [[City]] -> [City]
 minimumByLength [] = []
 minimumByLength (x:xs) = foldl minPath x xs
   where
     minPath a b = if length a < length b then a else b
 
+-- Auxiliary Function to check if the value is Just.
+isJust Nothing = False
+isJust (Just _) = True
 
--- TODO - WITH ERRORS
 -- Function that returns a solution for TSP using dynamic programming
 travelSales :: RoadMap -> Path
 travelSales rm =
   let cs = cities rm
       n = length cs
       distMatrix = distanceMatrix rm cs
-  in if n == 0 || not (isStronglyConnected rm)
-     then []
-     else (tsp cs distMatrix n 0 1) ++ [cs !! 0]
+   in if n == 0 || not (isStronglyConnected rm)
+        then []
+        else (tsp cs distMatrix n 0 1) ++ [cs !! 0]  -- Adicione a cidade inicial aqui
 
   where
     tsp :: [City] -> AdjMatrix -> Int -> Int -> Int -> Path
     tsp cs distArray n pos visited
-      | visited == (2 ^ n - 1) = [cs !! pos]
+      | visited == (2 ^ n - 1) = [cs !! pos]  -- Se todas as cidades foram visitadas
       | otherwise =
-        let nextCities = [next | next <- [0..n-1], next /= pos, not (Data.Bits.testBit visited next)]
-        in minimumByLength [step next | next <- nextCities]
+          let nextCities = [next | next <- [0 .. n - 1], next /= pos, not (Data.Bits.testBit visited next)]
+              validPaths = [step next | next <- nextCities, isJust (distArray Data.Array.! (pos, next))]
+           in if null validPaths  -- Verifica se existem caminhos válidos
+                then []  -- Retorna uma lista vazia se não houver caminhos válidos
+                else minimumByLength validPaths  -- Retorna o caminho de menor comprimento
 
       where
         step next =

@@ -1,5 +1,5 @@
 import Data.List
-import Data.Char
+import Data.Char ( ord, chr )
 
 -- Exercício 2.2 -> Função que intercala um valor entre os elementos de uma lista
 intersperse' :: a -> [a] -> [a]
