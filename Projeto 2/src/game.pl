@@ -1,38 +1,92 @@
-play :-
-    setup_board(6),          % Initialize the board (default size 6x6)
-    display_board(6),        % Show the initial board
-    game_loop(r).            % Start with player `r`
+:- use_module(library(random)).
+:- use_module('menu.pl').
+:- use_module('board.pl').
+
+% Entry point for the game
+main :-
+    menu.
+
+% Start the game
+start_game(Size, pvp) :-
+    setup_board(Size),
+    display_board(Size),
+    game_loop(r, Size).
+
+start_game(Size, pvc) :-
+    setup_board(Size),
+    display_board(Size),
+    game_loop_pvc(r, Size).
+
+start_game(Size, cvc) :-
+    setup_board(Size),
+    display_board(Size),
+    game_loop_cvc(r, Size).
+
+% Game loop for Player vs Computer
+game_loop_pvc(Player, Size) :-
+    (   Player = r ->
+        write('Player r, make your move!'), nl,
+        write('Enter [FromRow, FromCol, ToRow, ToCol]: '),
+        read([FromRow, FromCol, ToRow, ToCol]),
+        (   move(Player, FromRow, FromCol, ToRow, ToCol, Size) ->
+                (   next_player(Player, Opponent), check_win(Opponent) -> true
+                ;   game_loop_pvc(b, Size)
+                )
+        ;   write('Invalid move. Try again.'), nl,
+            game_loop_pvc(Player, Size)
+        )
+    ;   write('Computer is making a move...'), nl,
+        computer_move(b, Size),
+        (   check_win(Player) -> true
+        ;   game_loop_pvc(r, Size)
+        )
+    ).
+
+% Game loop for Computer vs Computer
+game_loop_cvc(Player, Size) :-
+    write('Computer '), write(Player), write(' is making a move...'), nl,
+    computer_move(Player, Size),
+    (   check_win(Player) ->  % Check if current player has lost
+        write('Computer '), write(Player), write(' has no moves left. Game over!'), nl
+    ;   next_player(Player, NextPlayer),
+        game_loop_cvc(NextPlayer, Size)  % Switch to the next player
+    ).
+
+% Computer move logic using can_move/2
+computer_move(Player, Size) :-
+    % Try to find a stone for the computer to move
+    (   board(FromRow, FromCol, Player),  % Find a stone controlled by the player
+        can_move(FromRow, FromCol, ToRow, ToCol)  % Check if the stone can move
+    ->  % If there is a valid move
+        write('Computer moved from ['), write(FromRow), write(','), write(FromCol),
+        write('] to ['), write(ToRow), write(','), write(ToCol), write('].'), nl,
+        move(Player, FromRow, FromCol, ToRow, ToCol, Size),  % Apply the move on the board
+        display_board(Size),  % Display the updated board
+        check_win(Player)  % Check if the computer has won
+    ;   write('No valid moves available for player '), write(Player), nl  % Handle no valid moves
+    ).
 
 % Game loop
-game_loop(Player) :-
+game_loop(Player, Size) :-
     write('Player '), write(Player), write(', make your move!'), nl,
     write('Enter [FromRow, FromCol, ToRow, ToCol]: '),
     read([FromRow, FromCol, ToRow, ToCol]),
     (   integer(FromRow), integer(FromCol), integer(ToRow), integer(ToCol) ->
-        (   move(Player, FromRow, FromCol, ToRow, ToCol) ->
+        (   move(Player, FromRow, FromCol, ToRow, ToCol, Size) ->
                 (   check_win(Player) -> true
                 ;   next_player(Player, NextPlayer),
-                    game_loop(NextPlayer)
+                    game_loop(NextPlayer, Size)
                 )
         ;   write('Invalid move. Try again.'), nl,
-            game_loop(Player)
+            game_loop(Player, Size)
         )
     ;   write('Invalid input. Please enter integers.'), nl,
-        game_loop(Player)
+        game_loop(Player, Size)
     ).
 
 % Switch to the next player
 next_player(r, b).
 next_player(b, r).
-
-% Check if a player has lost
-check_win(Player) :-
-    \+ (board(Row, Col, Player), can_move(Row, Col)),
-    write('Player '), write(Player), write(' has no moves left. You lose!'), nl.
-
-
-:- dynamic board/3.  % Represents the board: board(Row, Col, Stone).
-                     % Stone can be 'red', 'blue', or 'black'.
 
 between(Low, High, Low) :- Low =< High.
 between(Low, High, X) :-
@@ -49,94 +103,14 @@ forall(between(1, Size, Row),
     )
 ).
 
-% Initialize the game board
-setup_board(Size) :-
-    retractall(board(_, _, _)),  % Clear any existing board
-    Size >= 6,                   % Ensure board is at least 6
-    Size mod 2 =:= 0,            % Ensure board size is even
-    setup_perimeter(Size).       % Set up the initial perimeter stones
-
-% Setup the initial perimeter stones
-setup_perimeter(Size) :-
-    setup_perimeter_rows(Size, 1).
-
-setup_perimeter_rows(Size, Row) :-
-    Row =< Size,
-    setup_perimeter_cols(Size, Row, 1),
-    NextRow is Row + 1,
-    setup_perimeter_rows(Size, NextRow).
-setup_perimeter_rows(_, _). % Base case: no more rows
-
-setup_perimeter_cols(Size, Row, Col) :-
-    Col =< Size,
-    (   Row = 1, Col mod 2 =:= 0, Col < Size -> assertz(board(Row, Col, r))  % Red stones in first row, even positions except last
-    ;   Row = Size, Col mod 2 =:= 1, Col > 1 -> assertz(board(Row, Col, r))  % Red stones in last row, odd positions except first
-    ;   Col = 1, Row mod 2 =:= 1, Row > 1 -> assertz(board(Row, Col, b))     % Blue stones in first column, odd positions except first
-    ;   Col = Size, Row mod 2 =:= 0, Row < Size -> assertz(board(Row, Col, b)) % Blue stones in last column, even positions except last
-    ;   true  % Empty cells
-    ),
-    NextCol is Col + 1,
-    setup_perimeter_cols(Size, Row, NextCol).
-setup_perimeter_cols(_, _, _). % Base case: no more columns
-
-% Display the board with grid
-display_board(Size) :-
-    write('   |'),
-    display_column_labels(Size, 1),
-    nl,
-    write('---+---+---+---+---+---+---+'),  % Improved grid line format
-    nl,
-    display_rows(Size, 1).
-
-% Helper to display column labels
-display_column_labels(Size, Col) :-
-    Col =< Size,
-    write(' '), write(Col), write(' |'),
-    NextCol is Col + 1,
-    display_column_labels(Size, NextCol).
-display_column_labels(_, _).  % Base case: no more columns to display
-
-% Helper to display the grid line
-display_grid_line(Size) :-
-    Size > 0,
-    write('---'),
-    NextSize is Size - 1,
-    display_grid_line(NextSize).
-display_grid_line(0).
-
-% Helper to display all rows
-display_rows(Size, Row) :-
-    Row =< Size,
-    write(' '), write(Row), write(' |'),  % Row label formatting
-    display_columns(Size, Row, 1),  % Display the cells in the row
-    nl,  % Move to the next line after printing a row
-    write('---+---+---+---+---+---+---+'),  % Grid line after each row
-    nl,
-    NextRow is Row + 1,
-    display_rows(Size, NextRow).
-display_rows(_, _).  % Base case: no more rows to display
-
-% Helper to display a single row's columns
-display_columns(Size, Row, Col) :-
-    Col =< Size,
-    (   board(Row, Col, Stone) ->
-        (   Stone = black -> write(' X |')  % Render black as X with space for alignment
-        ;   write(' '), write(Stone), write(' |')  % Render other stones with spacing
-        )
-    ;   write('   |')  % Render empty cells as . with spacing
-    ),
-    NextCol is Col + 1,
-    display_columns(Size, Row, NextCol).
-display_columns(_, _, _).  % Base case: no more columns to display
-
 % Make a move for a player
-move(Player, FromRow, FromCol, ToRow, ToCol) :-
+move(Player, FromRow, FromCol, ToRow, ToCol, Size) :-
     valid_move(Player, FromRow, FromCol, ToRow, ToCol),
     retract(board(FromRow, FromCol, Player)),
     assertz(board(ToRow, ToCol, Player)),
     assertz(board(FromRow, FromCol, black)),
     handle_removals,
-    display_board(6).
+    display_board(Size).
 
 % Check if the move is valid
 valid_move(Player, FromRow, FromCol, ToRow, ToCol) :-
@@ -202,6 +176,17 @@ can_move(Row, Col) :-
     ;   fail
     ).
 
+can_move(Row, Col, ToRow, ToCol) :-
+    board(Row, Col, Player),
+    write('Checking possible moves for stone at ['), write(Row), write(','), write(Col), write('] for player '), write(Player), nl,
+    valid_direction(DeltaRow, DeltaCol),  % Generate potential move directions
+    ToRow is Row + DeltaRow,
+    ToCol is Col + DeltaCol,
+    (   valid_move(Player, Row, Col, ToRow, ToCol) ->
+        write('Can move to ['), write(ToRow), write(','), write(ToCol), write('].'), nl, !  % Cut after finding one valid move
+    ;   fail
+    ).
+
 % Remove blocked stones
 remove_stones([]).
 remove_stones([[Row, Col, _] | Rest]) :-
@@ -219,6 +204,5 @@ remove_contributing_black_stones(_) :-
 
 % Winning condition
 check_win(Player) :-
-    \+ board(_, _, Player),
-    write(Player), write(' loses!').
-
+    \+ (board(Row, Col, Player), can_move(Row, Col)),  % No valid moves for player
+    write('Player '), write(Player), write(' has no moves left. You lose!'), nl.
