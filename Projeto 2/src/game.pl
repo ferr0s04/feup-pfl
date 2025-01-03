@@ -6,70 +6,79 @@
 main :-
     menu.
 
-% Start the game
-start_game(Size, pvp) :-
+% Adjusted game start logic to pass variants and difficulties
+start_game(Variant, GameType, Difficulty, Size) :-
     setup_game(Size, Board),
     display_game(Size, Board),
-    game_loop(r, Size, Board).
+    (   GameType == pvp ->
+        game_loop(r, Size, Board, Variant)
+    ;   GameType == pvc ->
+        game_loop_pvc(r, Size, Board, Variant, Difficulty)
+    ;   GameType == cvc ->
+        game_loop_cvc(r, Size, Board, Variant, Difficulty)
+    ).
 
-start_game(Size, pvc) :-
-    setup_game(Size, Board),
-    display_game(Size, Board),
-    game_loop_pvc(r, Board).
-
-start_game(Size, cvc) :-
-    setup_game(Size, Board),
-    display_game(Size, Board),
-    game_loop_cvc(r, Board).
-
-
-% Game loop
-game_loop(Player, Size, Board) :-
+% Game loop for Player vs Player
+game_loop(Player, Size, Board, Variant) :-
     write('Player '), write(Player), write(', make your move!'), nl,
     write('Enter [FromRow, FromCol, ToRow, ToCol]: '),
     read([FromRow, FromCol, ToRow, ToCol]),
     (   integer(FromRow), integer(FromCol), integer(ToRow), integer(ToCol) ->
-        (   move(Player, FromRow, FromCol, ToRow, ToCol, Size, Board, UpdatedBoard) ->
-                (   check_win(Player, UpdatedBoard) -> true
-                ;   next_player(Player, NextPlayer),
-                    game_loop(NextPlayer, Size, UpdatedBoard)
+        (   move(Player, FromRow, FromCol, ToRow, ToCol, Size, Board, IntermediateBoard) ->
+                (   handle_removals(IntermediateBoard, Variant, UpdatedBoard),
+                    (   check_win(Player, UpdatedBoard) -> true
+                    ;   next_player(Player, NextPlayer),
+                        game_loop(NextPlayer, Size, UpdatedBoard, Variant)
+                    )
                 )
         ;   write('Invalid move. Try again.'), nl,
-            game_loop(Player, Size, Board)
+            game_loop(Player, Size, Board, Variant)
         )
     ;   write('Invalid input. Please enter integers.'), nl,
-        game_loop(Player, Size, Board)
+        game_loop(Player, Size, Board, Variant)
     ).
 
 
 % Game loop for Player vs Computer
-game_loop_pvc(Player, Size, Board) :-
+game_loop_pvc(Player, Size, Board, Variant, Difficulty) :-
     (   Player = r ->
         write('Player r, make your move!'), nl,
         write('Enter [FromRow, FromCol, ToRow, ToCol]: '),
         read([FromRow, FromCol, ToRow, ToCol]),
-        (   move(Player, FromRow, FromCol, ToRow, ToCol, Size, Board, UpdatedBoard) ->
-                (   next_player(Player, Opponent), check_win(Opponent, UpdatedBoard) -> true
-                ;   game_loop_pvc(b, Size, UpdatedBoard)
+        (   move(Player, FromRow, FromCol, ToRow, ToCol, Size, Board, IntermediateBoard) ->
+                (   handle_removals(IntermediateBoard, Variant, UpdatedBoard),
+                    (   next_player(Player, Opponent),
+                        check_win(Opponent, UpdatedBoard) -> true
+                    ;   game_loop_pvc(b, Size, UpdatedBoard, Variant, Difficulty)
+                    )
                 )
         ;   write('Invalid move. Try again.'), nl,
-            game_loop_pvc(Player, Size, Board)
+            game_loop_pvc(Player, Size, Board, Variant, Difficulty)
         )
     ;   write('Computer is making a move...'), nl,
-        computer_move(b, Size, Board, UpdatedBoard),
+        (   Difficulty == hard ->
+            write('Hard bot logic is not implemented yet.'), nl,
+            UpdatedBoard = Board  % Placeholder: leave board unchanged
+        ;   computer_move(b, Size, Board, IntermediateBoard),  % Easy bot logic
+            handle_removals(IntermediateBoard, Variant, UpdatedBoard)
+        ),
         (   check_win(Player, UpdatedBoard) -> true
-        ;   game_loop_pvc(r, Size, UpdatedBoard)
+        ;   game_loop_pvc(r, Size, UpdatedBoard, Variant, Difficulty)
         )
     ).
 
-% Game loop for Computer vs Computer
-game_loop_cvc(Player, Size, Board) :-
+% Game loop for Computer vs Computer 
+game_loop_cvc(Player, Size, Board, Variant, Difficulty) :-
     write('Computer '), write(Player), write(' is making a move...'), nl,
-    computer_move(Player, Size, Board, UpdatedBoard),
-    (   check_win(Player, UpdatedBoard) ->  % Check if current player has lost
-        write('Computer '), write(Player), write(' has no moves left. Game over!'), nl
+    (   Difficulty == hard ->
+        write('Hard bot logic is not implemented yet.'), nl,
+        UpdatedBoard = Board  % Placeholder: leave board unchanged
+    ;   computer_move(Player, Size, Board, IntermediateBoard),  % Easy bot logic
+        handle_removals(IntermediateBoard, Variant, UpdatedBoard)
+    ),
+    (   check_win(Player, UpdatedBoard) -> true
     ;   next_player(Player, NextPlayer),
-        game_loop_cvc(NextPlayer, Size, UpdatedBoard)  % Switch to the next player
+        game_loop_cvc(NextPlayer, Size, UpdatedBoard, Variant, Difficulty)
     ).
 
 % Computer move logic using can_move/2
@@ -85,6 +94,21 @@ computer_move(Player, Size, Board, UpdatedBoard) :-
     ;   write('No valid moves available for player '), write(Player), nl,
         UpdatedBoard = Board  % No moves available, return the board unchanged
     ).
+
+
+% Handle removals based on game variant
+handle_removals(Board, base, UpdatedBoard) :-
+    handle_removals(Board, UpdatedBoard).
+
+handle_removals(Board, medium_churn, UpdatedBoard) :-
+    findall((Row, Col, Player), blocked_stone(Row, Col, Player, Board), BlockedStones),
+    remove_contributing_black_stones(BlockedStones, Board, UpdatedBoard).
+
+handle_removals(Board, high_churn, UpdatedBoard) :-
+    findall((Row, Col, Player), blocked_stone(Row, Col, Player, Board), BlockedStones),
+    remove_all_black_stones(Board, TempBoard),
+    remove_stones(BlockedStones, TempBoard, UpdatedBoard).
+
 
 % Switch to the next player
 next_player(r, b).
