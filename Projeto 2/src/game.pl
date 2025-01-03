@@ -164,12 +164,6 @@ blocked_stone(Row, Col, Player, Board) :-
     ).
     write('Stone is blocked.'), nl.
 
-% Remove blocked stones from the board
-remove_stones([], Board, Board).
-remove_stones([(Row, Col, _) | Rest], Board, UpdatedBoard) :-
-    delete(Board, (Row, Col, _), TempBoard),
-    remove_stones(Rest, TempBoard, UpdatedBoard).
-
 % Check if a stone can move
 can_move(Row, Col, ToRow, ToCol, Board) :-
     member((Row, Col, Player), Board),
@@ -178,21 +172,42 @@ can_move(Row, Col, ToRow, ToCol, Board) :-
     ToCol is Col + DeltaCol,
     valid_move(Player, Row, Col, ToRow, ToCol, Board).
 
+% Remove blocked stones from the board
+remove_stones([], Board, Board).
+remove_stones([(Row, Col, _) | Rest], Board, UpdatedBoard) :-
+    delete(Board, (Row, Col, _), TempBoard),
+    remove_stones(Rest, TempBoard, UpdatedBoard).
+
+% Remove contributing black stones (Medium Churn Variant)
+remove_contributing_black_stones(BlockedStones, Board, UpdatedBoard) :-
+    findall(
+        (Row, Col),
+        (member((Row, Col, black), Board),
+         adjacent_to_blocked_stones((Row, Col), BlockedStones, Board)),
+        ContributingBlackStones
+    ),
+    subtract(Board, ContributingBlackStones, TempBoard),
+    subtract(TempBoard, BlockedStones, UpdatedBoard).
+
+% Check if a black stone is adjacent to any blocked stone
+adjacent_to_blocked_stones((BlackRow, BlackCol), BlockedStones, Board) :-
+    member((BlockedRow, BlockedCol, _), BlockedStones),
+    abs(BlackRow - BlockedRow) =< 1,
+    abs(BlackCol - BlockedCol) =< 1,
+    member((BlackRow, BlackCol, black), Board).
+
+% Remove all black stones (High Churn Variant)
+remove_all_black_stones(Board, UpdatedBoard) :-
+    exclude(is_black_stone, Board, UpdatedBoard).
+
+% Helper to identify black stones
+is_black_stone((_, _, black)).
+
 % Utility to delete an element from the board
 delete([Elem | Rest], Elem, Rest).
 delete([Other | Rest], Elem, [Other | UpdatedRest]) :-
     Other \= Elem,
     delete(Rest, Elem, UpdatedRest).
-
-
-% Remove all black stones (High Churn)
-remove_all_black_stones :-
-    retractall(board(_, _, B)).
-
-% Remove contributing black stones (Medium Churn)
-remove_contributing_black_stones(_) :-
-    % Implementation of identifying contributing black stones goes here
-    true.
 
 % Check win condition
 check_win(Player, Board) :-
