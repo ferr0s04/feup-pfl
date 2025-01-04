@@ -3,19 +3,25 @@
 :- use_module('board.pl').
 
 % Entry point for the game
-main :-
+play :-
     menu.
 
+% Define the initial game state
+initial_state(GameConfig, GameState) :-
+    GameConfig = game_config(variant(Variant), game_type(GameType), difficulty(Difficulty), size(Size), color(Color)),
+    GameState = game_state(board(Board), current_player(Color), captured_pieces([])),
+    display_game(GameState, GameType, Variant, Difficulty, Size).
+
 % Adjusted game start logic to pass variants and difficulties
-start_game(Variant, GameType, Difficulty, Size) :-
-    setup_game(Size, Board),
-    display_game(Size, Board),
+display_game(GameState, GameType, Variant, Difficulty, Size) :-
+    GameState = game_state(board(Board), current_player(Color), captured_pieces(CapturedPieces)),
+    display_board(Size, Board),
     (   GameType == pvp ->
-        game_loop(r, Size, Board, Variant)
+        game_loop(Color, Size, Board, Variant)
     ;   GameType == pvc ->
-        game_loop_pvc(r, Size, Board, Variant, Difficulty)
+        game_loop_pvc(Color, Size, Board, Variant, Difficulty)
     ;   GameType == cvc ->
-        game_loop_cvc(r, Size, Board, Variant, Difficulty)
+        game_loop_cvc(Color, Size, Board, Variant, Difficulty)
     ).
 
 % Game loop for Player vs Player

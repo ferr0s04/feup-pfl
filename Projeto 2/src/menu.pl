@@ -71,7 +71,6 @@ choose_computer_difficulty(Variant, GameType) :-
     ;   write('Invalid difficulty choice. Returning to play menu.'), nl, choose_computer_difficulty(Variant, GameType)
     ).
 
-% Select board size
 select_board_size(Variant, GameType, Difficulty) :-
     nl,
     write('Select Board Size:'), nl,
@@ -84,11 +83,39 @@ select_board_size(Variant, GameType, Difficulty) :-
     read(BoardSizeOption),
     (   BoardSizeOption == 5 -> play_menu
     ;   integer(BoardSizeOption), board_size(BoardSizeOption, Size) -> 
-        nl, write('Starting game...'), nl,
-        start_game(Variant, GameType, Difficulty, Size)
+        select_current_player(Variant, GameType, Difficulty, Size, Color)
     ;   write('Invalid board size. Returning to play menu.'), nl, select_board_size(Variant, GameType, Difficulty)
     ).
 
+% Select stone color
+select_current_player(Variant, GameType, Difficulty, Size, Color) :-
+    nl,
+    write('Choose Your Stone Color:'), nl,
+    write('1. Red'), nl,
+    write('2. Blue'), nl,
+    write('3. Back'), nl,
+    write('Choose an option (1-3): '),
+    read(ColorOption),
+    (   ColorOption == 3 -> 
+        play_menu
+    ;   integer(ColorOption), stone_color(ColorOption, Color) -> 
+        nl, 
+        %write('You selected: '), write(Color), nl,
+        write('Variant: '), write(Variant), nl,
+        write('GameType: '), write(GameType), nl,
+        write('Difficulty: '), write(Difficulty), nl,
+        write('Size: '), write(Size), nl,
+        write('Color: '), write(Color), nl,
+        nl, 
+        write('Starting game...'), nl,
+        create_game_config(Variant, GameType, Difficulty, Size, Color)
+    ;   write('Invalid choice. Returning to color selection.'), nl, select_current_player(Variant, GameType, Difficulty, Size, Color)
+    ).
+
+% Map stone color option to color
+stone_color(1, r).
+stone_color(2, b).
+stone_color(_, r) :- write('Invalid choice. Defaulting to Red.'), nl.
 
 % Map variant option to type
 variant_type(1, base).
@@ -210,3 +237,9 @@ show_high_variant :-
     write('stones from the board.'), nl,
     nl.
 
+% Save game configuration
+create_game_config(Variant, GameType, Difficulty, Size, Color) :-
+    setup_board(Size, Board),
+    GameConfig = game_config(variant(Variant), game_type(GameType), difficulty(Difficulty), size(Size), color(Color)),
+    GameState = game_state(board(Board), current_player(Color), captured_pieces([])),
+    initial_state(GameConfig, GameState).

@@ -1,5 +1,5 @@
 % Initialize the game board
-setup_game(Size, Board) :- 
+setup_board(Size, Board) :- 
     Size >= 6, 
     Size mod 2 =:= 0, 
     setup_perimeter(Size, Board).
@@ -28,7 +28,7 @@ setup_perimeter_cols(Size, Row, Col, Acc, UpdatedAcc) :-
 setup_perimeter_cols(_, _, _, Acc, Acc).
 
 % Display the board with grid
-display_game(Size, Board) :- 
+display_board(Size, Board) :- 
     write('   |'), 
     display_column_labels(Size, 1),
     nl, 
