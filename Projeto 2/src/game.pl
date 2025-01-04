@@ -44,7 +44,6 @@ game_loop(Player, Size, Board, Variant) :-
         game_loop(Player, Size, Board, Variant)
     ).
 
-
 % Game loop for Player vs Computer
 game_loop_pvc(Player, Size, Board, Variant, Difficulty) :-
     (   Player = r ->
@@ -84,7 +83,7 @@ move(Player, FromRow, FromCol, ToRow, ToCol, Size, Board, UpdatedBoard) :-
     valid_move(Player, FromRow, FromCol, ToRow, ToCol, Board),
     update_board(Player, FromRow, FromCol, ToRow, ToCol, Board, IntermediateBoard),
     handle_removals(IntermediateBoard, Variant, UpdatedBoard),
-    display_game(Size, UpdatedBoard).
+    display_board(Size, UpdatedBoard).
 
 % Handle blocked stones based on game variant
 handle_removals(Board, base, UpdatedBoard) :-
@@ -122,7 +121,6 @@ random_computer_move(Player, Size, Board, UpdatedBoard) :-
     ;   random_member((FromRow, FromCol, ToRow, ToCol), Moves),
         move(Player, FromRow, FromCol, ToRow, ToCol, Size, Board, UpdatedBoard)
     ).
-
 
 % Hard mode computer move: Greedy approach to maximize immediate advantage
 greedy_computer_move(Player, Size, Board, UpdatedBoard) :-
@@ -167,7 +165,6 @@ between(Low, High, X) :-
     NextLow is Low + 1,
     between(NextLow, High, X).
 
-
 % Update the board after a move
 update_board(Player, FromRow, FromCol, ToRow, ToCol, Board, UpdatedBoard) :-
     replace(Board, (FromRow, FromCol, Player), (FromRow, FromCol, black), TempBoard),
@@ -179,12 +176,10 @@ replace([Other | Rest], Old, New, [Other | UpdatedRest]) :-
     Other \= Old,
     replace(Rest, Old, New, UpdatedRest).
 
-
 % Check if the move is valid
 valid_move(Player, FromRow, FromCol, ToRow, ToCol, Board) :-
     member((FromRow, FromCol, Player), Board),
     queen_path_clear(FromRow, FromCol, ToRow, ToCol, Board).
-
 
 % Ensure path is clear for a chess queen move
 queen_path_clear(FromRow, FromCol, ToRow, ToCol, Board) :-
@@ -211,7 +206,6 @@ path_clear(Row, Col, DeltaRow, DeltaCol, Board) :-
     \+ member((NextRow, NextCol, _), Board),  % Ensure the cell is unoccupied
     (NewDeltaRow =:= 0, NewDeltaCol =:= 0 -> true; path_clear(NextRow, NextCol, NewDeltaRow, NewDeltaCol, Board)).
 
-
 % Check if a stone is blocked
 blocked_stone(Row, Col, Player, Board) :-
     member((Row, Col, Player), Board),
@@ -222,7 +216,6 @@ blocked_stone(Row, Col, Player, Board) :-
         ToCol is Col + DeltaCol,
         valid_move(Player, Row, Col, ToRow, ToCol, Board)
     ).
-
 
 % Check if a stone can move
 can_move(Row, Col, ToRow, ToCol, Board) :-
@@ -238,7 +231,6 @@ remove_stones([(Row, Col, _) | Rest], Board, UpdatedBoard) :-
     member((Row, Col, _), Board), 
     delete(Board, (Row, Col, _), TempBoard),
     remove_stones(Rest, TempBoard, UpdatedBoard).
-
 
 % Remove contributing black stones (Medium Churn Variant)
 remove_contributing_black_stones(BlockedStones, Board, UpdatedBoard) :-
