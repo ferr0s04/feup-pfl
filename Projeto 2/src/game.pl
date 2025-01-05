@@ -48,7 +48,7 @@ game_loop_pvp(Player, Size, Board, Variant) :-
 % Game loop for Player vs Computer
 game_loop_pvc(Player, Size, Board, Variant, Difficulty) :-
     (   Player = r ->
-        write('Player r, make your move!'), nl,
+        write('Player '), write(Player), write(', make your move!'), nl,
         write('Enter [FromRow, FromCol, ToRow, ToCol]: '),
         read([FromRow, FromCol, ToRow, ToCol]),
         (   move(Player, FromRow, FromCol, ToRow, ToCol, Size, Board, IntermediateBoard) ->
