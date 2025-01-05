@@ -83,12 +83,12 @@ select_board_size(Variant, GameType, Difficulty) :-
     read(BoardSizeOption),
     (   BoardSizeOption == 5 -> play_menu
     ;   integer(BoardSizeOption), board_size(BoardSizeOption, Size) -> 
-        select_current_player(Variant, GameType, Difficulty, Size, Color)
+        select_current_player(Variant, GameType, Difficulty, Size)
     ;   write('Invalid board size. Returning to play menu.'), nl, select_board_size(Variant, GameType, Difficulty)
     ).
 
 % Select stone color
-select_current_player(Variant, GameType, Difficulty, Size, Color) :-
+select_current_player(Variant, GameType, Difficulty, Size) :-
     nl,
     write('Choose Your Stone Color:'), nl,
     write('1. Red'), nl,
@@ -98,18 +98,10 @@ select_current_player(Variant, GameType, Difficulty, Size, Color) :-
     read(ColorOption),
     (   ColorOption == 3 -> 
         play_menu
-    ;   integer(ColorOption), stone_color(ColorOption, Color) -> 
-        nl, 
-        %write('You selected: '), write(Color), nl,
-        write('Variant: '), write(Variant), nl,
-        write('GameType: '), write(GameType), nl,
-        write('Difficulty: '), write(Difficulty), nl,
-        write('Size: '), write(Size), nl,
-        write('Color: '), write(Color), nl,
-        nl, 
-        write('Starting game...'), nl,
-        create_game_config(Variant, GameType, Difficulty, Size, Color)
-    ;   write('Invalid choice. Returning to color selection.'), nl, select_current_player(Variant, GameType, Difficulty, Size, Color)
+    ;   integer(ColorOption), stone_color(ColorOption, CurrentPlayer) -> 
+        nl, write('Starting game...'), nl,
+        create_game_config(Variant, GameType, Difficulty, Size, CurrentPlayer)
+    ;   write('Invalid choice. Returning to color selection.'), nl, select_current_player(Variant, GameType, Difficulty, Size, CurrentPlayer)
     ).
 
 % Map stone color option to color
@@ -186,7 +178,6 @@ show_introduction :-
     write('of all red and blue stones is a winning strategy.'), nl,
     nl.
 
-
 % Show basic rules
 show_basic_rules :-
     nl,
@@ -203,7 +194,6 @@ show_basic_rules :-
     write('   - A player loses if all of their stones are removed.'), nl,
     write('   - A player wins if their move eliminates all remaining red and blue stones.'), nl,
     nl.
-
 
 % Variants menu
 variants_menu :-
@@ -238,8 +228,8 @@ show_high_variant :-
     nl.
 
 % Save game configuration
-create_game_config(Variant, GameType, Difficulty, Size, Color) :-
+create_game_config(Variant, GameType, Difficulty, Size, CurrentPlayer) :-
     setup_board(Size, Board),
-    GameConfig = game_config(variant(Variant), game_type(GameType), difficulty(Difficulty), size(Size), color(Color)),
-    GameState = game_state(board(Board), current_player(Color), captured_pieces([])),
+    GameConfig = game_config(variant(Variant), game_type(GameType), difficulty(Difficulty), size(Size), current_player(CurrentPlayer)),
+    GameState = game_state(board(Board), current_player(CurrentPlayer), size(Size)),
     initial_state(GameConfig, GameState).

@@ -29,17 +29,22 @@ setup_perimeter_cols(_, _, _, Acc, Acc).
 
 % Display the board with grid
 display_board(Size, Board) :- 
+    nl,
     write('   |'), 
     display_column_labels(Size, 1),
     nl, 
     display_grid_line(Size), 
     nl, 
-    display_rows(Size, 1, Board).
+    display_rows(Size, 1, Board),
+    nl.
 
 % Helper to display column labels
 display_column_labels(Size, Col) :- 
     Col =< Size, 
-    write(' '), write(Col), write(' |'), 
+    (Col < 10 -> 
+        write(' '), write(Col), write(' |')
+    ;   write(' '), write(Col), write('|')
+    ),
     NextCol is Col + 1, 
     display_column_labels(Size, NextCol).
 display_column_labels(_, _).
@@ -47,15 +52,18 @@ display_column_labels(_, _).
 % Helper to display the grid line
 display_grid_line(Size) :- 
     Size > 0, 
-    write('---+'), 
+    write('---+'),
     NextSize is Size - 1, 
     display_grid_line(NextSize).
-display_grid_line(0) :- write('---').
+display_grid_line(0) :- write('---+').
 
 % Helper to display all rows
 display_rows(Size, Row, Board) :- 
     Row =< Size, 
-    write(' '), write(Row), write(' |'), 
+    (Row < 10 -> 
+        write(' '), write(Row), write(' |')
+    ;   write(Row), write(' |')
+    ),
     display_columns(Size, Row, 1, Board),
     nl, 
     display_grid_line(Size),
