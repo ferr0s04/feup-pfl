@@ -14,7 +14,7 @@ Miguel Moita Caseira - up202207678 -> 50%
 - Variantes Medium Churn e High Churn
 
 ## Instalação e Execução
-É necessário ter apenas o SICStus instalado na máquina.  
+É necessário ter apenas o SICStus instalado na máquina. Nas imagens deste ficheiro, foi utilizada a fonte *Cascadia Code Regular* para uma visualização melhorada. 
 
 **Passos**  
 1. Abrir o SICStus.

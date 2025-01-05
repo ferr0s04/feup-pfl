@@ -16,36 +16,34 @@ initial_state(GameConfig, GameState) :-
 display_game(GameState, GameType, Variant, Difficulty, Size) :-
     GameState = game_state(board(Board), current_player(CurrentPlayer), size(Size)),
     display_board(Size, Board),
-    display_game_loop(GameType, CurrentPlayer, Size, Board, Variant, Difficulty).
-
-display_game_loop(pvp, CurrentPlayer, Size, Board, Variant, _) :-
-    game_loop_pvp(CurrentPlayer, Size, Board, Variant).
-display_game_loop(pvc, CurrentPlayer, Size, Board, Variant, Difficulty) :-
-    game_loop_pvc(CurrentPlayer, Size, Board, Variant, Difficulty).
-display_game_loop(cvc, CurrentPlayer, Size, Board, Variant, Difficulty) :-
-    game_loop_cvc(CurrentPlayer, Size, Board, Variant, Difficulty).
+    (   GameType == pvp ->
+        game_loop_pvp(CurrentPlayer, Size, Board, Variant)
+    ;   GameType == pvc ->
+        game_loop_pvc(CurrentPlayer, Size, Board, Variant, Difficulty)
+    ;   GameType == cvc ->
+        game_loop_cvc(CurrentPlayer, Size, Board, Variant, Difficulty)
+    ).
 
 % Game loop for Player vs Player
 game_loop_pvp(Player, Size, Board, Variant) :-
     write('Player '), write(Player), write(', make your move!'), nl,
     write('Enter [FromRow, FromCol, ToRow, ToCol]: '),
     read([FromRow, FromCol, ToRow, ToCol]),
-    is_valid_move([FromRow, FromCol, ToRow, ToCol]),
-    move(Player, FromRow, FromCol, ToRow, ToCol, Size, Board, IntermediateBoard),
-    handle_removals(IntermediateBoard, Variant, UpdatedBoard),
-    next_player(Player, Opponent),
-    check_win(Opponent, UpdatedBoard),
-    write('Player '), write(Player), write(' wins!'), nl.
-
-game_loop_pvp(Player, Size, Board, Variant) :-
-    write('Invalid move. Try again.'), nl,
-    game_loop_pvp(Player, Size, Board, Variant).
-
-is_valid_move([FromRow, FromCol, ToRow, ToCol]) :-
-    integer(FromRow),
-    integer(FromCol),
-    integer(ToRow),
-    integer(ToCol).
+    (   integer(FromRow), integer(FromCol), integer(ToRow), integer(ToCol) ->
+        (   move(Player, FromRow, FromCol, ToRow, ToCol, Size, Board, IntermediateBoard) ->
+            handle_removals(IntermediateBoard, Variant, UpdatedBoard),
+            (   next_player(Player, Opponent),
+                check_win(Opponent, UpdatedBoard) ->
+                write('Player '), write(Player), write(' wins!'), nl
+            ;   next_player(Player, NextPlayer),
+                game_loop_pvp(NextPlayer, Size, UpdatedBoard, Variant)
+            )
+        ;   write('Invalid move. Try again.'), nl,
+            game_loop_pvp(Player, Size, Board, Variant)
+        )
+    ;   write('Invalid input. Please enter integers.'), nl,
+        game_loop_pvp(Player, Size, Board, Variant)
+    ).
 
 % Game loop for Player vs Computer
 game_loop_pvc(Player, Size, Board, Variant, Difficulty) :-
@@ -113,19 +111,19 @@ handle_removals(Board, medium_churn, UpdatedBoard) :-
 
 handle_removals(Board, high_churn, UpdatedBoard) :-
     findall((Row, Col, Player), blocked_stone(Row, Col, Player, Board), BlockedStones),
-    handle_blocked_stones(Board, BlockedStones, UpdatedBoard).
-
-handle_blocked_stones(Board, [], Board).
-
-handle_blocked_stones(Board, BlockedStones, UpdatedBoard) :-
-    remove_all_black_stones(Board, TempBoard),
-    remove_stones(BlockedStones, TempBoard, UpdatedBoard).
+    (   BlockedStones \= [] ->
+        remove_all_black_stones(Board, TempBoard),
+        remove_stones(BlockedStones, TempBoard, UpdatedBoard)
+    ;   UpdatedBoard = Board
+    ).
 
 % Computer move
-computer_move(Player, Size, Board, UpdatedBoard, easy) :-
-    random_computer_move(Player, Size, Board, UpdatedBoard).
-computer_move(Player, Size, Board, UpdatedBoard, hard) :-
-    greedy_computer_move(Player, Size, Board, UpdatedBoard).
+computer_move(Player, Size, Board, UpdatedBoard, Difficulty) :-
+    (   Difficulty == easy ->
+        random_computer_move(Player, Size, Board, UpdatedBoard)
+    ;   Difficulty == hard ->
+        greedy_computer_move(Player, Size, Board, UpdatedBoard)
+    ).
 
 % Easy mode computer move: Randomly selects a valid move
 random_computer_move(Player, Size, Board, UpdatedBoard) :-
@@ -193,18 +191,19 @@ evaluate_move(Moves, Board, BestMove) :-
     BestMove = (FromRow, FromCol, ToRow, ToCol).
 
 % Comparison for sorting moves
-compare_move_scores(=, (_, _, _, _, Score1), (_, _, _, _, Score2)) :-
-    Score1 >= Score2.
-compare_move_scores(<, (_, _, _, _, Score1), (_, _, _, _, Score2)) :-
-    Score1 < Score2.
+compare_move_scores(CompareResult, (_, _, _, _, Score1), (_, _, _, _, Score2)) :-
+    (   Score1 >= Score2
+    ->  CompareResult = (=)
+    ;   CompareResult = (<)
+    ).
 
 % Evaluate the score of a move
 evaluate_move_score(Player, FromRow, FromCol, ToRow, ToCol, Board, Score) :-
-    opponent(Player, Opponent),
-    member((ToRow, ToCol, Opponent), Board),
-    Score = 1.
-evaluate_move_score(Player, FromRow, FromCol, ToRow, ToCol, Board, Score) :-
-    Score = 0.
+    (   opponent(Player, Opponent),
+        member((ToRow, ToCol, Opponent), Board)  % If the destination contains an opponent's piece, it's a good move
+    ->  Score = 1
+    ;   Score = 0
+    ).
 
 % Determine the opponent player
 opponent(r, b).
@@ -228,7 +227,7 @@ update_board(Player, FromRow, FromCol, ToRow, ToCol, Board, UpdatedBoard) :-
 % Replace an element in the board
 replace([Old | Rest], Old, New, [New | Rest]).
 replace([Other | Rest], Old, New, [Other | UpdatedRest]) :-
-    \+ Other = Old,
+    Other \= Old,
     replace(Rest, Old, New, UpdatedRest).
 
 % Check if the move is valid
@@ -299,12 +298,12 @@ remove_contributing_black_stones(BlockedStones, Board, UpdatedBoard) :-
 
 % Subtract elements from a list
 subtract([], _, []).
-subtract([Head | Tail], ElementsToRemove, Result) :-
-    member(Head, ElementsToRemove),
-    subtract(Tail, ElementsToRemove, Result).
-subtract([Head | Tail], ElementsToRemove, [Head | Rest]) :-
-    \+ member(Head, ElementsToRemove),
-    subtract(Tail, ElementsToRemove, Rest).
+subtract([Head|Tail], ElementsToRemove, Result) :-
+    (   member(Head, ElementsToRemove) -> 
+        subtract(Tail, ElementsToRemove, Result)
+    ;   Result = [Head|Rest], 
+        subtract(Tail, ElementsToRemove, Rest)
+    ).
 
 % Check if a black stone is adjacent to any blocked stone
 adjacent_to_blocked_stones((BlackRow, BlackCol), BlockedStones, _) :-
@@ -339,15 +338,18 @@ check_win(Player, Board) :-
 game_over(GameState, Winner) :-
     GameState = game_state(board(Board), current_player(CurrentPlayer), _Size),
     opponent(CurrentPlayer, Opponent),
+    
     valid_moves(GameState, CurrentPlayerMoves),
     valid_moves(GameState, OpponentMoves),
-    handle_game_over(CurrentPlayerMoves, OpponentMoves, CurrentPlayer, Opponent, Winner).
-
-handle_game_over([], [], _, _, draw).
-handle_game_over([], _, Opponent, _, Winner) :-
-    Winner = Opponent.
-handle_game_over(_, [], CurrentPlayer, _, Winner) :-
-    Winner = CurrentPlayer.
+    
+    (   CurrentPlayerMoves = [] ->
+        (   OpponentMoves = [] ->
+            Winner = draw
+        ;   Winner = Opponent
+        )
+    ;   OpponentMoves = [] ->
+        Winner = CurrentPlayer
+    ).
 
 % Returns all possible valid moves
 valid_moves(GameState, ListOfMoves) :-
