@@ -14,14 +14,14 @@ menu :-
     read(Choice),
     handle_menu_choice(Choice).
 
-% Handle menu choices
+% Handle menu choices based on user input
 handle_menu_choice(1) :- play_menu.
 handle_menu_choice(2) :- show_controls, menu.
 handle_menu_choice(3) :- how_to_play_menu.
 handle_menu_choice(4) :- write('Goodbye!'), nl, halt.
 handle_menu_choice(_) :- write('Invalid choice. Please try again.'), nl, menu.
 
-% Play menu
+% Play menu where user selects game variant
 play_menu :-
     nl,
     write('Select Game Variant:'), nl,
@@ -31,13 +31,19 @@ play_menu :-
     write('4. Back'), nl,
     write('Choose an option (1-4): '),
     read(VariantOption),
-    (   VariantOption == 4 -> menu
-    ;   integer(VariantOption), variant_type(VariantOption, Variant) -> 
-        select_game_type(Variant)
-    ;   write('Invalid variant choice. Returning to play menu.'), nl, play_menu
-    ).
+    check_variant_option(VariantOption).
 
-% Select game type
+% Checks the game variant option and proceeds accordingly
+check_variant_option(4) :- menu.
+check_variant_option(VariantOption) :-
+    integer(VariantOption),
+    variant_type(VariantOption, Variant),
+    select_game_type(Variant).
+check_variant_option(_) :-
+    write('Invalid variant choice. Returning to play menu.'), nl,
+    play_menu.
+
+% Select game type after choosing the variant
 select_game_type(Variant) :-
     nl,
     write('Select Game Type:'), nl,
@@ -47,16 +53,33 @@ select_game_type(Variant) :-
     write('4. Back'), nl,
     write('Choose an option (1-4): '),
     read(GameTypeOption),
-    (   GameTypeOption == 4 -> play_menu
-    ;   integer(GameTypeOption), game_type(GameTypeOption, GameType) -> 
-        (   GameType == pvc -> choose_computer_difficulty(Variant, GameType)
-        ;   GameType == cvc -> choose_computer_difficulty(Variant, GameType)
-        ;   select_board_size(Variant, GameType, none)
-        )
-    ;   write('Invalid game type. Returning to play menu.'), nl, play_menu
-    ).
+    check_game_type_option(GameTypeOption, Variant).
 
-% Select computer difficulty
+% Check the game type option and take actions accordingly
+check_game_type_option(4, _) :- play_menu.
+check_game_type_option(GameTypeOption, Variant) :-
+    integer(GameTypeOption),
+    game_type(GameTypeOption, GameType),
+    proceed_with_game_type(Variant, GameType).
+check_game_type_option(_, Variant) :-
+    write('Invalid game type. Returning to play menu.'), nl,
+    play_menu.
+
+% Proceed with the game type based on player selection
+proceed_with_game_type(Variant, GameType) :-
+    GameType = pvc,
+    choose_computer_difficulty(Variant, GameType).
+
+proceed_with_game_type(Variant, GameType) :-
+    GameType = cvc,
+    choose_computer_difficulty(Variant, GameType).
+
+proceed_with_game_type(Variant, GameType) :-
+    GameType = pvp,
+    select_board_size(Variant, GameType, none).
+
+
+% Choose the computer difficulty for PVC or CVC games
 choose_computer_difficulty(Variant, GameType) :-
     nl,
     write('Select Computer Difficulty:'), nl,
@@ -65,12 +88,19 @@ choose_computer_difficulty(Variant, GameType) :-
     write('3. Back'), nl,
     write('Choose an option (1-3): '),
     read(DifficultyOption),
-    (   DifficultyOption == 3 -> play_menu
-    ;   integer(DifficultyOption), difficulty(DifficultyOption, Difficulty) -> 
-        select_board_size(Variant, GameType, Difficulty)
-    ;   write('Invalid difficulty choice. Returning to play menu.'), nl, choose_computer_difficulty(Variant, GameType)
-    ).
+    check_difficulty_option(DifficultyOption, Variant, GameType).
 
+% Check difficulty option and proceed
+check_difficulty_option(3, _, _) :- play_menu.
+check_difficulty_option(DifficultyOption, Variant, GameType) :-
+    integer(DifficultyOption),
+    difficulty(DifficultyOption, Difficulty),
+    select_board_size(Variant, GameType, Difficulty).
+check_difficulty_option(_, Variant, GameType) :-
+    write('Invalid difficulty choice. Returning to play menu.'), nl,
+    choose_computer_difficulty(Variant, GameType).
+
+% Select the board size for the game
 select_board_size(Variant, GameType, Difficulty) :-
     nl,
     write('Select Board Size:'), nl,
@@ -81,13 +111,19 @@ select_board_size(Variant, GameType, Difficulty) :-
     write('5. Back'), nl,
     write('Choose an option (1-5): '),
     read(BoardSizeOption),
-    (   BoardSizeOption == 5 -> play_menu
-    ;   integer(BoardSizeOption), board_size(BoardSizeOption, Size) -> 
-        select_current_player(Variant, GameType, Difficulty, Size)
-    ;   write('Invalid board size. Returning to play menu.'), nl, select_board_size(Variant, GameType, Difficulty)
-    ).
+    check_board_size_option(BoardSizeOption, Variant, GameType, Difficulty).
 
-% Select stone color
+% Check board size option and proceed
+check_board_size_option(5, _, _, _) :- play_menu.
+check_board_size_option(BoardSizeOption, Variant, GameType, Difficulty) :-
+    integer(BoardSizeOption),
+    board_size(BoardSizeOption, Size),
+    select_current_player(Variant, GameType, Difficulty, Size).
+check_board_size_option(_, Variant, GameType, Difficulty) :-
+    write('Invalid board size. Returning to play menu.'), nl,
+    select_board_size(Variant, GameType, Difficulty).
+
+% Select the player's stone color
 select_current_player(Variant, GameType, Difficulty, Size) :-
     nl,
     write('Choose Your Stone Color:'), nl,
@@ -96,13 +132,24 @@ select_current_player(Variant, GameType, Difficulty, Size) :-
     write('3. Back'), nl,
     write('Choose an option (1-3): '),
     read(ColorOption),
-    (   ColorOption == 3 -> 
-        play_menu
-    ;   integer(ColorOption), stone_color(ColorOption, CurrentPlayer) -> 
-        nl, write('Starting game...'), nl,
-        create_game_config(Variant, GameType, Difficulty, Size, CurrentPlayer)
-    ;   write('Invalid choice. Returning to color selection.'), nl, select_current_player(Variant, GameType, Difficulty, Size, CurrentPlayer)
-    ).
+    check_color_option(ColorOption, Variant, GameType, Difficulty, Size).
+
+% Check color option and proceed
+check_color_option(3, Variant, GameType, Difficulty, Size) :- 
+    play_menu.
+check_color_option(ColorOption, Variant, GameType, Difficulty, Size) :-
+    integer(ColorOption),
+    stone_color(ColorOption, CurrentPlayer),
+    start_game(Variant, GameType, Difficulty, Size, CurrentPlayer).
+check_color_option(_, Variant, GameType, Difficulty, Size) :-
+    write('Invalid choice. Returning to color selection.'), nl,
+    select_current_player(Variant, GameType, Difficulty, Size).
+
+% Start the game with the selected configurations
+start_game(Variant, GameType, Difficulty, Size, CurrentPlayer) :-
+    nl,
+    write('Starting game...'), nl,
+    create_game_config(Variant, GameType, Difficulty, Size, CurrentPlayer).
 
 % Map stone color option to color
 stone_color(1, r).
@@ -133,7 +180,7 @@ board_size(3, 10).
 board_size(4, 12).
 board_size(_, 6) :- write('Invalid choice. Defaulting to 6x6.'), nl.
 
-% Show controls
+% Show controls for the game
 show_controls :-
     nl,
     write('Controls:'), nl,
@@ -158,6 +205,7 @@ how_to_play_menu :-
     read(Option),
     handle_how_to_play_option(Option).
 
+% Handle how to play options
 handle_how_to_play_option(1) :- show_introduction, how_to_play_menu.
 handle_how_to_play_option(2) :- show_basic_rules, how_to_play_menu.
 handle_how_to_play_option(3) :- variants_menu.
@@ -206,6 +254,7 @@ variants_menu :-
     read(Option),
     handle_variant_option(Option).
 
+% Handle variant options
 handle_variant_option(1) :- show_medium_variant, variants_menu.
 handle_variant_option(2) :- show_high_variant, variants_menu.
 handle_variant_option(3) :- how_to_play_menu.
