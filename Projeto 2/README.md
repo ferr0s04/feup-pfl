@@ -25,7 +25,19 @@ Miguel Moita Caseira - up202207678 -> 50%
 3. Executar o predicado **play/0** sem argumentos para iniciar o jogo.
 
 ## Descrição do Jogo
-Blackstone é um jogo de estratégia e para 2 jogadores, e foi desenvolvido por Mark Steere. É jogado num tabuleiro **6x6** ou maior e cada jogador começa com peças no perímero do tabuleiro. Para vencer, o objetivo é bloquear ou remover as peças do oponente.
+**Blackstone** é um jogo de estratégia e para **2 jogadores**, e foi desenvolvido por **Mark Steere** em março de 2024 com a contribuição de Alex Erickson no seu design.
+
+É jogado num **tabuleiro quadrado** de qualquer tamanho par (**6x6** ou maior). A borda do tabuleiro é povoada por **pedras vermelhas e azuis** em padrões iniciais específicos, sendo controladas por jogadores diferentes.
+
+O **objetivo** é **bloquear** ou **remover** as peças do oponente, até que não sobre nenhuma. 
+
+No **turno** de cada jogador, o mesmo deve escolher uma pedra da sua **cor** para se mover como uma **rainha no xadrez** ( por qualquer número de casas ao longo de uma linha reta sem obstáculos, em qualquer direção: horizontal,vertical e diagonal).
+
+Após a sua **jogada**, deve **colocar uma pedra preta** no local de onde a pedra que lhe pertencia se moveu. Esta pedra agora age como um **obstáculo** para jogadas futuras.
+
+Se, após colocar a pedra preta, **qualquer pedra vermelha ou azul estiver totalmente cercada por pedras de qualquer cor e não puder se mover**, essas pedras são **removidas do tabuleiro**.
+
+Para chegar à **vitória**, um dos jogadores necessita de **eliminar todas as peças do oponente** , mesmo que nesse cenário acabe por **eliminar todas as suas peças restante restantes no tabuleiro**.
 
 ## Lógica do Jogo
 
