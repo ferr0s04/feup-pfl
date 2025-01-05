@@ -12,7 +12,7 @@ initial_state(GameConfig, GameState) :-
     GameState = game_state(board(Board), current_player(CurrentPlayer), size(Size)),
     display_game(GameState, GameType, Variant, Difficulty, Size).
 
-% Adjusted game start logic to pass variants and difficulties
+% Display the game state
 display_game(GameState, GameType, Variant, Difficulty, Size) :-
     GameState = game_state(board(Board), current_player(CurrentPlayer), size(Size)),
     display_board(Size, Board),
@@ -109,11 +109,8 @@ handle_removals(Board, medium_churn, UpdatedBoard) :-
     findall((Row, Col, Player), blocked_stone(Row, Col, Player, Board), BlockedStones),
     remove_contributing_black_stones(BlockedStones, Board, UpdatedBoard).
 
-% Handle removals based on the "high churn" condition
 handle_removals(Board, high_churn, UpdatedBoard) :-
     findall((Row, Col, Player), blocked_stone(Row, Col, Player, Board), BlockedStones),
-    
-    % Only remove black stones if blocked stones are found
     (   BlockedStones \= [] ->
         remove_all_black_stones(Board, TempBoard),
         remove_stones(BlockedStones, TempBoard, UpdatedBoard)
@@ -208,7 +205,7 @@ evaluate_move_score(Player, FromRow, FromCol, ToRow, ToCol, Board, Score) :-
     ;   Score = 0
     ).
 
-% Utility to determine the opponent player
+% Determine the opponent player
 opponent(r, b).
 opponent(b, r).
 
@@ -325,7 +322,7 @@ remove_all_black_stones([(Row, Col, Player)|Rest], UpdatedBoard) :-
 % Helper to identify black stones
 is_black_stone((_, _, black)).
 
-% Utility to delete an element from the board
+% Delete an element from the board
 delete_piece([Elem | Rest], Elem, Rest).
 delete_piece([Other | Rest], Elem, [Other | UpdatedRest]) :-
     Other \= Elem,
