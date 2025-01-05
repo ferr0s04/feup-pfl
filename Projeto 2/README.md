@@ -39,6 +39,14 @@ Se, após colocar a pedra preta, **qualquer pedra vermelha ou azul estiver total
 
 Para chegar à **vitória**, um dos jogadores necessita de **eliminar todas as peças do oponente** , mesmo que nesse cenário acabe por **eliminar todas as suas peças restante restantes no tabuleiro**.
 
+**VARIANTE DE CHURN MÉDIO**:
+
+Ao **bloquear uma ou mais pedras vermelhas ou azuis**, essas pedras e **todas as pedras pretas que contribuíram para o bloqueio** são removidas do tabuleiro.
+
+**VARIANTE DE CHURN ALTO**:
+
+Ao **bloquear uma ou mais pedras vermelhas ou azuis**, essas pedras e **todas as pedras pretas** são removidas do tabuleiro.
+
 ## Lógica do Jogo
 
 |   Ficheiro   | Descrição |

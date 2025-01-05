@@ -1,4 +1,4 @@
-% Main menu
+    % Main menu
 menu :- 
     nl,
     nl,
