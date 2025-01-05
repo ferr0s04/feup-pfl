@@ -39,7 +39,6 @@ Se, após colocar a pedra preta, **qualquer pedra vermelha ou azul estiver total
 
 Para chegar à **vitória**, um dos jogadores necessita de **eliminar todas as peças do oponente** , mesmo que nesse cenário acabe por **eliminar todas as suas peças restante restantes no tabuleiro**.
 
-
 ## Lógica do Jogo
 
 |   Ficheiro   | Descrição |
