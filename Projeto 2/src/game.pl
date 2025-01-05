@@ -31,12 +31,13 @@ game_loop_pvp(Player, Size, Board, Variant) :-
     read([FromRow, FromCol, ToRow, ToCol]),
     (   integer(FromRow), integer(FromCol), integer(ToRow), integer(ToCol) ->
         (   move(Player, FromRow, FromCol, ToRow, ToCol, Size, Board, IntermediateBoard) ->
-                (   handle_removals(IntermediateBoard, Variant, UpdatedBoard),
-                    (   game_over(Player, UpdatedBoard) -> true
-                    ;   next_player(Player, NextPlayer),
-                        game_loop_pvp(NextPlayer, Size, UpdatedBoard, Variant)
-                    )
-                )
+            handle_removals(IntermediateBoard, Variant, UpdatedBoard),
+            (   next_player(Player, Opponent),
+                check_win(Opponent, UpdatedBoard) ->
+                write('Player '), write(Player), write(' wins!'), nl
+            ;   next_player(Player, NextPlayer),
+                game_loop_pvp(NextPlayer, Size, UpdatedBoard, Variant)
+            )
         ;   write('Invalid move. Try again.'), nl,
             game_loop_pvp(Player, Size, Board, Variant)
         )
@@ -53,7 +54,8 @@ game_loop_pvc(Player, Size, Board, Variant, Difficulty) :-
         (   move(Player, FromRow, FromCol, ToRow, ToCol, Size, Board, IntermediateBoard) ->
             handle_removals(IntermediateBoard, Variant, UpdatedBoard),
             (   next_player(Player, Opponent),
-                game_over(Opponent, UpdatedBoard) -> true
+                check_win(Opponent, UpdatedBoard) ->
+                write('Player '), write(Player), write(' wins!'), nl
             ;   game_loop_pvc(b, Size, UpdatedBoard, Variant, Difficulty)
             )
         ;   write('Invalid move. Try again.'), nl,
@@ -62,19 +64,33 @@ game_loop_pvc(Player, Size, Board, Variant, Difficulty) :-
     ;   write('Computer is making a move...'), nl,
         computer_move(b, Size, Board, IntermediateBoard, Difficulty),
         handle_removals(IntermediateBoard, Variant, UpdatedBoard),
-        (   game_over(Player, UpdatedBoard) -> true
-        ;   game_loop_pvc(r, Size, UpdatedBoard, Variant, Difficulty)
+        (   check_win(Player, UpdatedBoard) ->
+            write('Player wins!'), nl
+        ;   next_player(Player, Opponent),
+            (   check_win(Opponent, UpdatedBoard) ->
+                write('Computer wins!'), nl
+            ;   game_loop_pvc(r, Size, UpdatedBoard, Variant, Difficulty)
+            )
         )
     ).
 
-% Game loop for Computer vs Computer 
+% Game loop for Computer vs Computer
 game_loop_cvc(Player, Size, Board, Variant, Difficulty) :-
     write('Computer '), write(Player), write(' is making a move...'), nl,
-        computer_move(Player, Size, Board, IntermediateBoard, Difficulty),  
-        handle_removals(IntermediateBoard, Variant, UpdatedBoard),
-    (   game_over(Player, UpdatedBoard) -> true
-    ;   next_player(Player, NextPlayer),
-        game_loop_cvc(NextPlayer, Size, UpdatedBoard, Variant, Difficulty)
+    computer_move(Player, Size, Board, IntermediateBoard, Difficulty),
+    handle_removals(IntermediateBoard, Variant, UpdatedBoard),
+    valid_moves(game_state(board(UpdatedBoard), current_player(Player), size(Size)), PlayerMoves),
+    next_player(Player, Opponent),
+    valid_moves(game_state(board(UpdatedBoard), current_player(Opponent), size(Size)), OpponentMoves),
+    (   PlayerMoves = [], OpponentMoves = [] ->
+        write('Both players are immobile. It is a draw!'), nl
+    ;   PlayerMoves = [] ->
+        write('Player '), write(Player), write(' has no moves left. '),
+        write('Player '), write(Opponent), write(' wins!'), nl
+    ;   OpponentMoves = [] ->
+        write('Player '), write(Opponent), write(' has no moves left. '),
+        write('Player '), write(Player), write(' wins!'), nl
+    ;   game_loop_cvc(Opponent, Size, UpdatedBoard, Variant, Difficulty)
     ).
 
 % Make a move for a player
@@ -104,7 +120,7 @@ handle_removals(Board, high_churn, UpdatedBoard) :-
     ;   UpdatedBoard = Board
     ).
 
-% Integration into the game loop
+% Computer move
 computer_move(Player, Size, Board, UpdatedBoard, Difficulty) :-
     (   Difficulty == easy ->
         random_computer_move(Player, Size, Board, UpdatedBoard)
@@ -125,7 +141,6 @@ random_computer_move(Player, Size, Board, UpdatedBoard) :-
         Moves
     ),
     (   Moves = [] ->
-        write('No valid moves available for player '), write(Player), nl,
         UpdatedBoard = Board  % No moves available
     ;   random_member((FromRow, FromCol, ToRow, ToCol), Moves),
         move(Player, FromRow, FromCol, ToRow, ToCol, Size, Board, UpdatedBoard)
@@ -144,7 +159,6 @@ greedy_computer_move(Player, Size, Board, UpdatedBoard) :-
         Moves
     ),
     (   Moves = [] ->
-        write('No valid moves available for player '), write(Player), nl,
         UpdatedBoard = Board  % No moves available
     ;
         evaluate_move(Moves, Board, BestMove),
@@ -285,6 +299,15 @@ remove_contributing_black_stones(BlockedStones, Board, UpdatedBoard) :-
     subtract(Board, ContributingBlackStones, TempBoard),
     subtract(TempBoard, BlockedStones, UpdatedBoard).
 
+% Subtract elements from a list
+subtract([], _, []).
+subtract([Head|Tail], ElementsToRemove, Result) :-
+    (   member(Head, ElementsToRemove) -> 
+        subtract(Tail, ElementsToRemove, Result)
+    ;   Result = [Head|Rest], 
+        subtract(Tail, ElementsToRemove, Rest)
+    ).
+
 % Check if a black stone is adjacent to any blocked stone
 adjacent_to_blocked_stones((BlackRow, BlackCol), BlockedStones, _) :-
     member((BlockedRow, BlockedCol, _), BlockedStones),
@@ -308,22 +331,27 @@ delete_piece([Other | Rest], Elem, [Other | UpdatedRest]) :-
     Other \= Elem,
     delete_piece(Rest, Elem, UpdatedRest).
 
+% Check win condition for a player
+check_win(Player, Board) :-
+    opponent(Player, Opponent),
+    \+ (member((Row, Col, Player), Board), can_move(Row, Col, _, _, Board)),
+    \+ (member((Row, Col, Opponent), Board), can_move(Row, Col, _, _, Board)).
+
 % Check win condition
-game_over(GameState) :-
+game_over(GameState, Winner) :-
     GameState = game_state(board(Board), current_player(CurrentPlayer), _Size),
     opponent(CurrentPlayer, Opponent),
     
     valid_moves(GameState, CurrentPlayerMoves),
     valid_moves(GameState, OpponentMoves),
     
-    % Check if either player has no valid moves left
     (   CurrentPlayerMoves = [] ->
         (   OpponentMoves = [] ->
-            write('Both players are immobile. It is a draw!'), nl
-        ;   write('Player '), write(CurrentPlayer), write(' has no moves left. You lose!'), nl
+            Winner = draw
+        ;   Winner = Opponent
         )
     ;   OpponentMoves = [] ->
-        write('Player '), write(Opponent), write(' has no moves left. You win!'), nl
+        Winner = CurrentPlayer
     ).
 
 % Returns all possible valid moves
@@ -331,11 +359,11 @@ valid_moves(GameState, ListOfMoves) :-
     GameState = game_state(board(Board), current_player(CurrentPlayer), size(Size)),
     findall(
         (FromRow, FromCol, ToRow, ToCol),
-        (   member((FromRow, FromCol, Player), Board),
+        (   member((FromRow, FromCol, CurrentPlayer), Board),
             between(1, Size, ToRow),
             between(1, Size, ToCol),
             (   ToRow \= FromRow; ToCol \= FromCol),
-            valid_move(Player, FromRow, FromCol, ToRow, ToCol, Board)
+            valid_move(CurrentPlayer, FromRow, FromCol, ToRow, ToCol, Board)
         ),
         ListOfMoves
     ).
