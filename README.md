@@ -3,8 +3,10 @@
 Functional and Logical Programming (PFL)
 
 **Contents**  
-Practical classes' solved exercise sheets (Sheets 1-3, for now)  
-Practical projects (SOON)
+Practical classes' solved exercise sheets  
+Some solved practical exams (from previous years)  
+Practical projects
 
 ## Projects
-SOON
+- **Project 1** - country roadmap representation in Haskell (graph manipulation)
+- **Project 2** - Blackstone board game in Prolog
