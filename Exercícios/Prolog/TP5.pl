@@ -79,3 +79,13 @@ city_count(Company, Count) :-
     sort(L3, CityList),
     length(CityList, Count).
 
+% e) Todos as formas de ir de uma origem a um destino
+find_all_flights(Origin, Destination, ListOfFlights) :-
+    find_flight_path(Origin, Destination, [], ListOfFlights).
+
+% Função auxiliar que encontra caminhos entre a Origem e o Destino
+find_flight_path(Origin, Origin, Path, [Path]).
+find_flight_path(Current, Destination, Path, AllPaths) :-
+    flight(Current, Next, _, Code, _, _), % Voos intermédios
+    \+ member(Code, Path), % Verifica se não há ciclos
+    find_flight_path(Next, Destination, [Code|Path], AllPaths). % Adiciona o voo ao Path e continua a pesquisa
