@@ -1,6 +1,48 @@
 import Data.List
 import Data.Char ( ord, chr )
 
+-- Exercício 2.1 -> Definições recursivas de funções
+-- Testar se todos os valores são True
+myand :: [Bool] -> Bool
+myand [] = True
+myand (x:xs)
+    | not x = False
+    | otherwise = myand xs
+
+-- Testar se algum valor é True
+myor :: [Bool] -> Bool
+myor [] = False
+myor (x:xs)
+    | x = True
+    | otherwise = myor xs
+
+-- Concatenar uma lista de listas
+myconcat :: [[a]] -> [a]
+myconcat [] = []
+myconcat (x:xs) = x ++ myconcat xs
+
+-- Produzir uma lista com n elementos iguais
+myreplicate :: Int -> a -> [a]
+myreplicate n x
+    | n <= 0 = []
+    | otherwise = x : myreplicate (n-1) x
+
+-- Selecionar o n-ésimo elemento duma lista
+myindex :: [a] -> Int -> a 
+myindex (x:_) 0 = x
+myindex (_:xs) n
+    | n < 0 = error "Invalid index"
+    | otherwise = myindex xs (n-1)
+myindex [] _ = error "Out of bounds"
+
+-- Testar se um valor ocorre numa lista
+myelem :: Eq a => a -> [a] -> Bool
+myelem _ [] = False
+myelem n (x:xs)
+    | x == n = True
+    | otherwise = myelem n xs
+
+
 -- Exercício 2.2 -> Função que intercala um valor entre os elementos de uma lista
 intersperse' :: a -> [a] -> [a]
 intersperse' _ [] = []
@@ -73,8 +115,8 @@ cifrar x y = map (cifrarLetra x) y
 cifrarLetra :: Int -> Char -> Char
 cifrarLetra x y
     | y == ' ' = ' '
-    | ord y + x <= ord 'Z' = chr (ord y + x) 
-    | otherwise = chr (ord 'A' + mod(x + ord y - ord 'A') (ord 'Z' - ord 'A' + 1))
+    | ord y + x <= ord 'Z' = chr (ord y + x)
+    | otherwise = chr (ord 'A' + mod (x + ord y - ord 'A') (ord 'Z' - ord 'A' + 1))
 
 
 -- Exercício 2.20 -> Definir a função 'transpose' (transposta de uma matriz)
@@ -114,5 +156,5 @@ msort xs = merge' (msort esq) (msort dir)
 
 -- Função auxiliar -> divide uma lista em duas metades ordenadas (ver Folha 1)
 metades :: Ord a => [a] -> ([a], [a])
-metades xs = (ssort'(take metade xs), ssort'(drop metade xs))
+metades xs = (ssort' (take metade xs), ssort' (drop metade xs))
     where metade = length xs `div` 2

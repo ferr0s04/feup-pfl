@@ -52,6 +52,16 @@ h) palindromo :: Eq a => [a] -> Bool
 i) twice :: (a -> a) -> a -> a
 -}
 
+-- Exercício 1.9 - Classificação
+classifica :: Int -> String
+classifica n
+    | n <= 9 = "reprovado"
+    | n >= 10 && n <= 12 = "suficiente"
+    | n >= 13 && n <= 15 = "bom"
+    | n >= 16 && n <= 18 = "muito bom"
+    | n >= 19 && n <= 20 = "muito bom com distinção"
+    | otherwise = "nota inválida"
+
 -- Exercício 1.12 -> Definir a função xor
 xor' :: Bool -> Bool -> Bool
 xor' True True = False
