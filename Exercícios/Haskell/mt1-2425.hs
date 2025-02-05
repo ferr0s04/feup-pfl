@@ -159,7 +159,7 @@ areConnected rm orig dest = dfs orig [] where
     dfs current visited
         | current == dest = True -- Se chegámos ao destino
         | current `elem` visited = False -- A cidade já foi visitada
-        | otherwise = any (\(next, _) -> dfs next (current : visited)) (adjacent rm current) -- DFS recursivo
+        | otherwise = any (\(next, _) -> dfs next (current : visited)) (adjacent rm current) -- DFS recursivo: adiciona a cidade atual às visitadas e pesquisa uma cidade qualquer que seja adjacente à atual
 
 -- areConnected gTest1 "0" "3" -> True
 -- areConnected gTest2 "0" "3" -> False

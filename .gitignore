@@ -2,3 +2,6 @@
 *.exe
 *.o
 *.hi
+/Exercícios/Haskell/book.hs
+/Exercícios/Haskell/mt1-2122-2.hs
+/Exercícios/Haskell/mt1-2425-2.hs
