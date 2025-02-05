@@ -1,5 +1,4 @@
 -- Mini-Teste 1 2024-25
-import Data.List (nub)
 
 type Match = ((String,String), (Int,Int))
 type MatchDay = [Match]
@@ -63,7 +62,7 @@ merge (x:xs) (y:ys) cmp
 ranking :: League -> [(String,Int)]
 ranking [] = []
 ranking l =
-    let teams = nub (concatMap (\day -> [team1 | ((team1, _), _) <- day] ++ [team2 | ((_, team2), _) <- day]) l)
+    let teams = myNub (concatMap (\day -> [team1 | ((team1, _), _) <- day] ++ [team2 | ((_, team2), _) <- day]) l)
         scores = [(team, leagueScore team l) | team <- teams]
     in sortByCond scores compareRankings
 
@@ -73,6 +72,11 @@ compareRankings (team1, score1) (team2, score2)
     | score1 > score2 = True
     | score1 < score2 = False
     | otherwise = team1 < team2 -- Em caso de empate, ordem alfabética
+
+-- Implementação do nub (não é permitido usar módulos)
+myNub :: (Eq a) => [a] -> [a]
+myNub [] = []
+myNub (x:xs) = x : myNub (filter (/= x) xs)
 
 -- ranking myLeague -> [("Porto",7),("Sporting",4),("Benfica",3),("Vitoria SC",3)]
 
@@ -104,7 +108,7 @@ bigWins l = [(i, [winner | ((team1, team2), (score1, score2)) <- matchDay, abs (
 winningStreaks :: League -> [(String, Int, Int)]
 winningStreaks league = concat [findStreaks team league | team <- teams]
   where
-    teams = nub [team | matchDay <- league, ((team1, team2), _) <- matchDay, team <- [team1, team2]]
+    teams = myNub [team | matchDay <- league, ((team1, team2), _) <- matchDay, team <- [team1, team2]]
 
 -- Função auxiliar para procurar sequências de vitórias consecutivas para uma equipa
 findStreaks :: String -> League -> [(String, Int, Int)]
