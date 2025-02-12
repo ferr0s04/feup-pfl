@@ -38,3 +38,20 @@ rabbits = 2 : 3 : zipWith (+) rabbits (tail rabbits)
 
 rabbitYears :: (Integral a) => a -> Int
 rabbitYears n = length ([x | x <- take (fromIntegral n) rabbits, x < n])
+
+
+data Dendrogram = Leaf String | Node Dendrogram Int Dendrogram
+
+myDendro :: Dendrogram
+myDendro = Node (Node (Leaf "dog") 3 (Leaf "cat")) 5 (Leaf "octopus")
+
+dendroWidth :: Dendrogram -> Int
+dendroWidth (Leaf str) = 0
+dendroWidth (Node d1 w d2) = w*2 + div (max (dendroWidth d1) (dendroWidth d2)) 2
+
+dendroInBounds :: Dendrogram -> Int -> [String] -- Com erros
+dendroInBounds (Leaf str) limit
+    | limit >= 0 = [str]
+    | otherwise = []
+dendroInBounds (Node d1 w d2) limit = dendroInBounds d1 (limit - w) ++ dendroInBounds d2 (limit - w)
+
